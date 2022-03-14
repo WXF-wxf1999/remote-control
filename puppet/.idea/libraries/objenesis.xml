@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="objenesis" type="repository">
+    <properties maven-id="org.objenesis:objenesis:3.2" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/objenesis-3.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

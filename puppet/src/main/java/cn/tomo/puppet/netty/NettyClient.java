@@ -1,15 +1,17 @@
 package cn.tomo.puppet.netty;
-import cn.tomo.puppet.common.Configure;
-import cn.tomo.puppet.common.Log;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-
 import java.util.concurrent.Semaphore;
+
+import cn.tomo.puppet.common.Configure;
+import cn.tomo.puppet.common.Log;
+import cn.tomo.puppet.common.DataPacket;
 
 public class NettyClient {
 
@@ -33,8 +35,8 @@ public class NettyClient {
 
                         // must add a decoder or will not receive a message
                         // channelRead will be called in ByteToMessageDecoder, the our channelRead0 will work
-                        pipeline.addLast(new StringDecoder());
-                        pipeline.addLast(new StringEncoder());
+                        pipeline.addLast(new Decoder());
+                        pipeline.addLast(new Encoder());
                         // add our handler
                         pipeline.addLast(new ChannelHandler());
 
