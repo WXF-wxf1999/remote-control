@@ -1,0 +1,13 @@
+// use proto3 grammar
+syntax = "proto3";
+
+message Packet{
+
+  int32 clientId = 1;              // if high bit is true,it is controller,or,it's puppet
+
+  int32 messageType = 2;           // type
+
+  bytes dataSegment1 = 3;          // first data segment
+
+  bytes dataSegment2 = 4;          // second data segment for expansion in future
+}

@@ -4,6 +4,8 @@
 #include "loguru.h"
 #include "IoUring.h"
 #include "config.h"
+#include "proto/Coder.h"
+#include "proto/DataPacket.pb.h"
 
 namespace IoUringSpace {
 
@@ -135,19 +137,21 @@ void IoUring::setup_listen() {
 }
 
 IoUring::IoUring() : listen_socket_(0), min_post_accept_count_(10)
-                   , thread_pool_(nullptr) {
+                   , thread_pool_(nullptr), sessions_(new ObjectSpace::Sessions()) {
 
 }
 
 IoUring::~IoUring() {
+
     // if there is no reply to aio, calling this will cause cofusion
     //io_uring_queue_exit(&ring_);
     if(listen_socket_ != 0) {
         close(listen_socket_);
     }
-    if(thread_pool_) {
-        delete thread_pool_;
-    }
+
+    delete thread_pool_;
+    delete sessions_;
+
 }
 
 void* IoUring::wait_request(void* parameter) {
@@ -232,6 +236,19 @@ void IoUring::handle_io(int res, IoUring::Request* req) {
             break;
     }
     delete req;
+}
+
+void IoUring::parse_data(IoUring::Request *request) {
+
+    Packet packet;
+    if(CoderSpace::Coder::decode(request, packet) == -1) {
+        LOG_F(INFO, "receive a malformed packet");
+        return;
+    }
+
+    // get session id to identify puppet or controller
+
+
 }
 
 }

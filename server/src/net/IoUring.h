@@ -7,6 +7,7 @@
 #include <atomic>
 
 #include "thread/ThreadPool.h"
+#include "object/Sessions.h"
 
 namespace IoUringSpace {
 
@@ -43,12 +44,14 @@ private:
     void post_accept(int socket);
     void handle_io(int res, Request* req);
     int  get_listen_socket() const;
+    static void parse_data(Request* request);
     static void* wait_request(void* parameter);
 
 private:
     int               listen_socket_;
     int               min_post_accept_count_;
     io_uring          ring_{};
+    ObjectSpace::Sessions*       sessions_;
     ThreadPoolSpace::ThreadPool* thread_pool_;
 };
 }

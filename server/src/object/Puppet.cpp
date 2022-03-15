@@ -1,11 +1,17 @@
 #include "Puppet.h"
+#include "loguru.h"
 
 namespace ObjectSpace {
 
-void Puppet::handle_io(ObjectSpace::Request *request) {
+void Puppet::handle_io(Packet& packet) {
 
-    char* recv_data = static_cast<char*>(request->iov[0].iov_base);
-    unsigned int recv_len = request->iov[0].iov_len;
+
+    switch (packet.messagetype()) {
+        case 0:
+            break;
+    }
+
+    // create manage object
 
 //    need parse the object‘s serialzation information
 //    Buffer buffer(recv_data, recv_len);
