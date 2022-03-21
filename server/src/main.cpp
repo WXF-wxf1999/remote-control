@@ -1,5 +1,6 @@
 #include <semaphore.h>
 #include <iostream>
+
 #include "net/IoUring.h"
 
 sem_t g_semaphore;
@@ -12,8 +13,10 @@ void sigint_handler(int signo) {
 }
 
 int main() {
-    IoUringSpace::IoUring net = IoUringSpace::IoUring::get_instance();
-    net.start_working();
+
+    std::unique_ptr<IoUringSpace::IoUring> net(new IoUringSpace::IoUring());
+
+    net->start_working();
     // the main thread must exist,or net object will destory and call ~IoUring
     sem_init(&g_semaphore, 0, 0);
     signal(SIGINT, sigint_handler);

@@ -14,12 +14,9 @@ class Coder {
 
 public:
     static int decode(IoUringSpace::IoUring::Request *request, Packet& packet) {
+
         char* data = static_cast<char*>(request->iov[0].iov_base);
 
-        // mistake data packet
-        if(request->iov[0].iov_len < sizeof(int)) {
-            return -1;
-        }
         // len = sizeof(int) + len(protobuf)
         int data_len = 0;
 
@@ -38,22 +35,25 @@ public:
 
     static int encode(IoUringSpace::IoUring::Request *request, int socket, Packet& packet) {
 
-        size_t bytes_length = packet.ByteSizeLong();
+        int bytes_length = packet.ByteSizeLong();
 
-        if(bytes_length < 8) {
-            // sizeof(clientId) + sizeof(messageType) = 8
-            return -1;
-        }
-        request = new IoUringSpace::IoUring::Request;
-        request->iov = new iovec;
+        // actually when we set the clientId and messageType, the length is 2 bytes
+//        if(bytes_length < 8) {
+//            // sizeof(clientId) + sizeof(messageType) = 8
+//            return -1;
+//        }
+        int data_len = bytes_length + 4;
+
         request->client_socket = socket;
-        request->iov[0].iov_base = new char[bytes_length];
-        request->iov[0].iov_len = bytes_length;
+        request->iov[0].iov_base = new char[data_len];
+        request->iov[0].iov_len = data_len;
         request->event_type = IoUringSpace::IoType::OP_WRITE;
         request->iovec_count = 1;
 
+        *(static_cast<int*>(request->iov[0].iov_base)) = bytes_length;
+        unsigned long address = reinterpret_cast<unsigned long>(request->iov[0].iov_base) + sizeof(int);
         // store in iov_base
-        packet.SerializeToArray(request->iov[0].iov_base, static_cast<int>(bytes_length));
+        packet.SerializeToArray(reinterpret_cast<void*>(address), static_cast<int>(bytes_length));
         return 0;
     }
 };

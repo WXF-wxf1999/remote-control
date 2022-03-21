@@ -2,18 +2,12 @@ package cn.tomo.puppet.common;
 
 public enum Command {
 
-    CONNECT,
+    PUPPET_LOGIN,
 
-    LEAVE,
+    CONTROLLER_LOGIN,
 
-    HEARTBEAT,
+    LOGIN_SUCCESS,
 
-    SCREEN,
-
-    MOUSE,
-
-    KEYBOARD,
-
-    FILE
+    DEVICE_NOT_ONLINE
 
 }

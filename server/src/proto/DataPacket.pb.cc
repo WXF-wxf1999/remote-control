@@ -20,8 +20,8 @@ constexpr Packet::Packet(
   ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
   : datasegment1_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
   , datasegment2_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
-  , clientid_(0)
-  , messagetype_(0){}
+  , sessionid_(0u)
+  , messagetype_(0u){}
 struct PacketDefaultTypeInternal {
   constexpr PacketDefaultTypeInternal()
     : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
@@ -42,7 +42,7 @@ const uint32_t TableStruct_DataPacket_2eproto::offsets[] PROTOBUF_SECTION_VARIAB
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::Packet, clientid_),
+  PROTOBUF_FIELD_OFFSET(::Packet, sessionid_),
   PROTOBUF_FIELD_OFFSET(::Packet, messagetype_),
   PROTOBUF_FIELD_OFFSET(::Packet, datasegment1_),
   PROTOBUF_FIELD_OFFSET(::Packet, datasegment2_),
@@ -56,13 +56,13 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_DataPacket_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\020DataPacket.proto\"[\n\006Packet\022\020\n\010clientId"
-  "\030\001 \001(\005\022\023\n\013messageType\030\002 \001(\005\022\024\n\014dataSegme"
-  "nt1\030\003 \001(\014\022\024\n\014dataSegment2\030\004 \001(\014b\006proto3"
+  "\n\020DataPacket.proto\"\\\n\006Packet\022\021\n\tsessionI"
+  "d\030\001 \001(\r\022\023\n\013messageType\030\002 \001(\r\022\024\n\014dataSegm"
+  "ent1\030\003 \001(\014\022\024\n\014dataSegment2\030\004 \001(\014b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_DataPacket_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_DataPacket_2eproto = {
-  false, false, 119, descriptor_table_protodef_DataPacket_2eproto, "DataPacket.proto", 
+  false, false, 120, descriptor_table_protodef_DataPacket_2eproto, "DataPacket.proto", 
   &descriptor_table_DataPacket_2eproto_once, nullptr, 0, 1,
   schemas, file_default_instances, TableStruct_DataPacket_2eproto::offsets,
   file_level_metadata_DataPacket_2eproto, file_level_enum_descriptors_DataPacket_2eproto, file_level_service_descriptors_DataPacket_2eproto,
@@ -108,9 +108,9 @@ Packet::Packet(const Packet& from)
     datasegment2_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_datasegment2(), 
       GetArenaForAllocation());
   }
-  ::memcpy(&clientid_, &from.clientid_,
+  ::memcpy(&sessionid_, &from.sessionid_,
     static_cast<size_t>(reinterpret_cast<char*>(&messagetype_) -
-    reinterpret_cast<char*>(&clientid_)) + sizeof(messagetype_));
+    reinterpret_cast<char*>(&sessionid_)) + sizeof(messagetype_));
   // @@protoc_insertion_point(copy_constructor:Packet)
 }
 
@@ -124,9 +124,9 @@ datasegment2_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStrin
   datasegment2_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
-    reinterpret_cast<char*>(&clientid_) - reinterpret_cast<char*>(this)),
+    reinterpret_cast<char*>(&sessionid_) - reinterpret_cast<char*>(this)),
     0, static_cast<size_t>(reinterpret_cast<char*>(&messagetype_) -
-    reinterpret_cast<char*>(&clientid_)) + sizeof(messagetype_));
+    reinterpret_cast<char*>(&sessionid_)) + sizeof(messagetype_));
 }
 
 Packet::~Packet() {
@@ -160,9 +160,9 @@ void Packet::Clear() {
 
   datasegment1_.ClearToEmpty();
   datasegment2_.ClearToEmpty();
-  ::memset(&clientid_, 0, static_cast<size_t>(
+  ::memset(&sessionid_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&messagetype_) -
-      reinterpret_cast<char*>(&clientid_)) + sizeof(messagetype_));
+      reinterpret_cast<char*>(&sessionid_)) + sizeof(messagetype_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -172,15 +172,15 @@ const char* Packet::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::int
     uint32_t tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // int32 clientId = 1;
+      // uint32 sessionId = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
-          clientid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          sessionid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // int32 messageType = 2;
+      // uint32 messageType = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
           messagetype_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
@@ -235,16 +235,16 @@ uint8_t* Packet::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // int32 clientId = 1;
-  if (this->_internal_clientid() != 0) {
+  // uint32 sessionId = 1;
+  if (this->_internal_sessionid() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(1, this->_internal_clientid(), target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_sessionid(), target);
   }
 
-  // int32 messageType = 2;
+  // uint32 messageType = 2;
   if (this->_internal_messagetype() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(2, this->_internal_messagetype(), target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_messagetype(), target);
   }
 
   // bytes dataSegment1 = 3;
@@ -289,14 +289,14 @@ size_t Packet::ByteSizeLong() const {
         this->_internal_datasegment2());
   }
 
-  // int32 clientId = 1;
-  if (this->_internal_clientid() != 0) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32SizePlusOne(this->_internal_clientid());
+  // uint32 sessionId = 1;
+  if (this->_internal_sessionid() != 0) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32SizePlusOne(this->_internal_sessionid());
   }
 
-  // int32 messageType = 2;
+  // uint32 messageType = 2;
   if (this->_internal_messagetype() != 0) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32SizePlusOne(this->_internal_messagetype());
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32SizePlusOne(this->_internal_messagetype());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
@@ -327,8 +327,8 @@ void Packet::MergeFrom(const Packet& from) {
   if (!from._internal_datasegment2().empty()) {
     _internal_set_datasegment2(from._internal_datasegment2());
   }
-  if (from._internal_clientid() != 0) {
-    _internal_set_clientid(from._internal_clientid());
+  if (from._internal_sessionid() != 0) {
+    _internal_set_sessionid(from._internal_sessionid());
   }
   if (from._internal_messagetype() != 0) {
     _internal_set_messagetype(from._internal_messagetype());
@@ -365,9 +365,9 @@ void Packet::InternalSwap(Packet* other) {
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Packet, messagetype_)
       + sizeof(Packet::messagetype_)
-      - PROTOBUF_FIELD_OFFSET(Packet, clientid_)>(
-          reinterpret_cast<char*>(&clientid_),
-          reinterpret_cast<char*>(&other->clientid_));
+      - PROTOBUF_FIELD_OFFSET(Packet, sessionid_)>(
+          reinterpret_cast<char*>(&sessionid_),
+          reinterpret_cast<char*>(&other->sessionid_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Packet::GetMetadata() const {

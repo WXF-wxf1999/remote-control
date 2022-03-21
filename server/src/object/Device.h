@@ -6,14 +6,23 @@
 namespace ObjectSpace {
 
 enum MessageType {
-    LOGIN = 0,
-    HEART_BEAT = 1
+    PUPPET_LOGIN = 0,
+    CONTROLLER_LOGIN = 1,
+    LOGIN_SUCCESS = 2,
+    DEVICE_NOT_ONLINE = 3
 };
 
 class Device {
 
+private:
+    int socket_;
+
 public:
-    virtual void handle_io(Packet& packet) {};
+    explicit Device(int socket) : socket_(socket) {}
+
+    int get_socket() const {
+        return socket_;
+    }
 
 };
 

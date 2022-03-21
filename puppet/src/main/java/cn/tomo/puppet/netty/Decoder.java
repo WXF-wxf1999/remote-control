@@ -19,7 +19,7 @@ public class Decoder extends ByteToMessageDecoder {
         // read from begin
         byteBuf.markReaderIndex();
 
-        int length = byteBuf.readInt();
+        int length = byteBuf.readIntLE();
         if(length < 0) {
             channelHandlerContext.close();
         }

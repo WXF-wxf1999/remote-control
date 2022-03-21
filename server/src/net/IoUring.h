@@ -26,31 +26,36 @@ struct Request {
     int client_socket{};   // it can nvolve a class object
     iovec *iov;  // iovc*
     IoType event_type;
-    std::atomic<bool> is_handled;
 
-    Request() : is_handled(false), iov(nullptr) {}
+    Request() : iov(new iovec) {}
+    ~Request() { delete iov; }
 };
 
 public:
+    IoUring();
     ~IoUring();
     void            start_working();
-    static IoUring& get_instance();
+    //static IoUring& get_instance();
 
 private:
-    IoUring();
+
     void setup_listen();
-    void post_recv(int socket);
-    void post_send(Request* req);
-    void post_accept(int socket);
-    void handle_io(int res, Request* req);
+    static void post_recv(int socket, io_uring* ring);
+    static void post_send(Request* req, io_uring* ring);
+    static void post_accept(int socket, io_uring* ring);
+    void handle_io(int socket, Request* req, io_uring* ring);
     int  get_listen_socket() const;
-    static void parse_data(Request* request);
+    void handle_request(Request* request, io_uring* ring);
     static void* wait_request(void* parameter);
+    void forward_data(Request *request, Packet& packet);
+    void puppet_login(Request *request, Packet& packet);
+    void controller_login(Request *request, Packet& packet);
 
 private:
+    int               session_id_;
     int               listen_socket_;
     int               min_post_accept_count_;
-    io_uring          ring_{};
+    std::atomic<bool> working_;
     ObjectSpace::Sessions*       sessions_;
     ThreadPoolSpace::ThreadPool* thread_pool_;
 };

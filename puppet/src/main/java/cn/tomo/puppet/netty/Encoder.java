@@ -24,7 +24,7 @@ public class Encoder extends MessageToByteEncoder {
         // write into byteBUf and send message
 
         // data length -- object data
-        byteBuf.writeInt(length);
+        byteBuf.writeIntLE(length);
         byteBuf.writeBytes(data);
     }
 }

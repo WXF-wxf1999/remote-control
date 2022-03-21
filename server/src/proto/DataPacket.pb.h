@@ -186,7 +186,7 @@ class Packet final :
   enum : int {
     kDataSegment1FieldNumber = 3,
     kDataSegment2FieldNumber = 4,
-    kClientIdFieldNumber = 1,
+    kSessionIdFieldNumber = 1,
     kMessageTypeFieldNumber = 2,
   };
   // bytes dataSegment1 = 3;
@@ -217,22 +217,22 @@ class Packet final :
   std::string* _internal_mutable_datasegment2();
   public:
 
-  // int32 clientId = 1;
-  void clear_clientid();
-  int32_t clientid() const;
-  void set_clientid(int32_t value);
+  // uint32 sessionId = 1;
+  void clear_sessionid();
+  uint32_t sessionid() const;
+  void set_sessionid(uint32_t value);
   private:
-  int32_t _internal_clientid() const;
-  void _internal_set_clientid(int32_t value);
+  uint32_t _internal_sessionid() const;
+  void _internal_set_sessionid(uint32_t value);
   public:
 
-  // int32 messageType = 2;
+  // uint32 messageType = 2;
   void clear_messagetype();
-  int32_t messagetype() const;
-  void set_messagetype(int32_t value);
+  uint32_t messagetype() const;
+  void set_messagetype(uint32_t value);
   private:
-  int32_t _internal_messagetype() const;
-  void _internal_set_messagetype(int32_t value);
+  uint32_t _internal_messagetype() const;
+  void _internal_set_messagetype(uint32_t value);
   public:
 
   // @@protoc_insertion_point(class_scope:Packet)
@@ -244,8 +244,8 @@ class Packet final :
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr datasegment1_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr datasegment2_;
-  int32_t clientid_;
-  int32_t messagetype_;
+  uint32_t sessionid_;
+  uint32_t messagetype_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_DataPacket_2eproto;
 };
@@ -260,42 +260,42 @@ class Packet final :
 #endif  // __GNUC__
 // Packet
 
-// int32 clientId = 1;
-inline void Packet::clear_clientid() {
-  clientid_ = 0;
+// uint32 sessionId = 1;
+inline void Packet::clear_sessionid() {
+  sessionid_ = 0u;
 }
-inline int32_t Packet::_internal_clientid() const {
-  return clientid_;
+inline uint32_t Packet::_internal_sessionid() const {
+  return sessionid_;
 }
-inline int32_t Packet::clientid() const {
-  // @@protoc_insertion_point(field_get:Packet.clientId)
-  return _internal_clientid();
+inline uint32_t Packet::sessionid() const {
+  // @@protoc_insertion_point(field_get:Packet.sessionId)
+  return _internal_sessionid();
 }
-inline void Packet::_internal_set_clientid(int32_t value) {
+inline void Packet::_internal_set_sessionid(uint32_t value) {
   
-  clientid_ = value;
+  sessionid_ = value;
 }
-inline void Packet::set_clientid(int32_t value) {
-  _internal_set_clientid(value);
-  // @@protoc_insertion_point(field_set:Packet.clientId)
+inline void Packet::set_sessionid(uint32_t value) {
+  _internal_set_sessionid(value);
+  // @@protoc_insertion_point(field_set:Packet.sessionId)
 }
 
-// int32 messageType = 2;
+// uint32 messageType = 2;
 inline void Packet::clear_messagetype() {
-  messagetype_ = 0;
+  messagetype_ = 0u;
 }
-inline int32_t Packet::_internal_messagetype() const {
+inline uint32_t Packet::_internal_messagetype() const {
   return messagetype_;
 }
-inline int32_t Packet::messagetype() const {
+inline uint32_t Packet::messagetype() const {
   // @@protoc_insertion_point(field_get:Packet.messageType)
   return _internal_messagetype();
 }
-inline void Packet::_internal_set_messagetype(int32_t value) {
+inline void Packet::_internal_set_messagetype(uint32_t value) {
   
   messagetype_ = value;
 }
-inline void Packet::set_messagetype(int32_t value) {
+inline void Packet::set_messagetype(uint32_t value) {
   _internal_set_messagetype(value);
   // @@protoc_insertion_point(field_set:Packet.messageType)
 }

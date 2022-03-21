@@ -3,9 +3,9 @@ syntax = "proto3";
 
 message Packet{
 
-  int32 clientId = 1;              // if high bit is true,it is controller,or,it's puppet
+  uint32 sessionId = 1;              // if high bit is true,it is controller,or,it's puppet
 
-  int32 messageType = 2;           // type
+  uint32 messageType = 2;           // type
 
   bytes dataSegment1 = 3;          // first data segment
 

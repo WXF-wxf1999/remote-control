@@ -9,11 +9,9 @@
 
 namespace IoUringSpace {
 
-std::mutex      g_mutex;
-
-void IoUring::post_accept(int socket) {
+void IoUring::post_accept(int socket, io_uring* ring) {
     // get request queue
-    io_uring_sqe *sqe = io_uring_get_sqe(&ring_);
+    io_uring_sqe *sqe = io_uring_get_sqe(ring);
     if(sqe == nullptr) {
         LOG_F(ERROR,"io_uring_get_sqe() failed");
         return;
@@ -28,16 +26,16 @@ void IoUring::post_accept(int socket) {
     auto* req = new Request;
     req->event_type = IoType::OP_ACCEPT;
     io_uring_sqe_set_data(sqe, req);
-    io_uring_submit(&ring_);
+    io_uring_submit(ring);
 }
 
-void IoUring::post_recv(int socket) {
+void IoUring::post_recv(int socket, io_uring* ring) {
 
-    io_uring_sqe *sqe = io_uring_get_sqe(&ring_);
+    LOG_F(INFO, "POST RECV");
+    io_uring_sqe *sqe = io_uring_get_sqe(ring);
     // in read request, we can only specify the size of buffer in advance
     // in the case of the large amount data, it is a problem
     auto* req = new Request;
-    req->iov = new iovec;
     req->iov[0].iov_base = new char[READ_SIZE];
     req->iov[0].iov_len = READ_SIZE;
     req->event_type = IoType::OP_READ;
@@ -49,13 +47,14 @@ void IoUring::post_recv(int socket) {
 
     io_uring_prep_readv(sqe, socket, &req->iov[0], 1, 0);
     io_uring_sqe_set_data(sqe, req);
-    io_uring_submit(&ring_);
+    io_uring_submit(ring);
 
 }
 
-void IoUring::post_send(Request* req) {
+void IoUring::post_send(Request* req, io_uring* ring) {
 
-    io_uring_sqe *sqe = io_uring_get_sqe(&ring_);
+    LOG_F(INFO, "SEND");
+    io_uring_sqe *sqe = io_uring_get_sqe(ring);
     if(sqe == nullptr) {
         LOG_F(ERROR, "io_uring_get_sqe() failed");
     }
@@ -64,7 +63,7 @@ void IoUring::post_send(Request* req) {
     // and how the receiver receive these data?
     io_uring_prep_writev(sqe, req->client_socket, req->iov, req->iovec_count, 0);
     io_uring_sqe_set_data(sqe, req);
-    io_uring_submit(&ring_);
+    io_uring_submit(ring);
 }
 
 void IoUring::start_working() {
@@ -75,29 +74,14 @@ void IoUring::start_working() {
     if(listen_socket_ == 0) {
         return;
     }
-    io_uring_queue_init(QUEUE_DEPTH, &ring_, 0);
-    // create a dynamic thread pool to wait
-    for(auto i = 0; i < min_post_accept_count_; i++) {
-        /*
-         * Whether the listening socket has a maximum queue,
-         * whether I can create another listening socket listening on the same port
-         */
-        post_accept(listen_socket_);
-    }
 
-//    wait_pool_ = new ThreadPoolSpace::DynaThreadPool(0,
-//                                                     3,
-//                                                     THREAD_HIGH_RATIO,
-//                                                     THREAD_LOW_RATIO,
-//                                                     THREAD_STANDARD_RATIO,
-//                                                     wait_request,
-//                                                     this);
-//    wait_pool_->start_thread_pool();
-    thread_pool_ = new ThreadPoolSpace::ThreadPool(10);
-    // wait_request(this);
-    // should change threads' number dynamically, now submit two thread using to wait io
-    thread_pool_->submit([this] { wait_request(this);});
-    thread_pool_->submit([this] { wait_request(this);});
+    int thread_number = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN)) * 2;
+
+    thread_pool_ = new ThreadPoolSpace::ThreadPool(thread_number);
+
+    for(int i =0; i<thread_number; i++) {
+        thread_pool_->submit([this] { wait_request(this);});
+    }
 
 }
 
@@ -126,9 +110,11 @@ void IoUring::setup_listen() {
     address.sin_family = AF_INET;
     address.sin_port = htons(SERVER_PORT);
     address.sin_addr.s_addr = htonl(INADDR_ANY);
-    
-    if (bind(listen_socket_, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0) {
-        LOG_F(ERROR, "bind failed");
+
+    int res = 0;
+    res = bind(listen_socket_, reinterpret_cast<sockaddr*>(&address), sizeof(address));
+    if ( res < 0) {
+        LOG_F(ERROR, "bind failed with error code : %d", res);
     }
 
     if (listen(listen_socket_, SOMAXCONN) < 0) {
@@ -136,15 +122,16 @@ void IoUring::setup_listen() {
     }
 }
 
-IoUring::IoUring() : listen_socket_(0), min_post_accept_count_(10)
+IoUring::IoUring() : listen_socket_(0), min_post_accept_count_(10), session_id_(0), working_(true)
                    , thread_pool_(nullptr), sessions_(new ObjectSpace::Sessions()) {
 
 }
 
 IoUring::~IoUring() {
 
-    // if there is no reply to aio, calling this will cause cofusion
-    //io_uring_queue_exit(&ring_);
+    working_ = false;
+    sleep(1);
+
     if(listen_socket_ != 0) {
         close(listen_socket_);
     }
@@ -156,43 +143,51 @@ IoUring::~IoUring() {
 
 void* IoUring::wait_request(void* parameter) {
 
+    io_uring          ring{};
+
     auto* pthis = static_cast<IoUring*>(parameter);
+
+    io_uring_queue_init(QUEUE_DEPTH, &ring, 0);
+
+    // create a dynamic thread pool to wait
+    for(auto i = 0; i < pthis->min_post_accept_count_; i++) {
+        /*
+         * Whether the listening socket has a maximum queue,
+         * whether I can create another listening socket listening on the same port
+         */
+        pthis->post_accept(pthis->listen_socket_, &ring);
+    }
 
     io_uring_cqe* cqe = nullptr;
 
-    while (true) {
+    while (pthis->working_) {
 
-        int ret = io_uring_wait_cqe(&pthis->ring_, &cqe);
+        int ret = io_uring_wait_cqe(&ring, &cqe);
+
+        if (ret < 0) {
+            LOG_F(INFO, "io_uring_wait_cqe %d", ret);
+            continue;
+        }
 
         // store the result, because we will call io_uring_cqe_seen
         auto res = cqe->res;
         auto *req = reinterpret_cast<Request*>(cqe->user_data);
 
-        if (ret < 0) {
-            LOG_F(INFO, "io_uring_wait_cqe");
-            continue;
-        }
         if (res < 0) {
             LOG_F(ERROR, "Async request failed: %s for event: %d\n", strerror(res), req->event_type);
             return nullptr;
         }
 
-        // prevent the io from being processed multiple times
-        {
-            std::unique_lock<std::mutex> lock(g_mutex);
-            if(req->is_handled) {
-                continue;
-            }
-            req->is_handled = true;
-        }
-
         // mark that we have tackled this io event
-        io_uring_cqe_seen(&pthis->ring_, cqe);
+        io_uring_cqe_seen(&ring, cqe);
 
+        LOG_F(INFO, "handle io");
         // handle io
-        pthis->thread_pool_->submit([pthis, res, req]() {pthis->handle_io(res, req);});
+        pthis->handle_io(res, req, &ring);
     }
 
+    io_uring_queue_exit(&ring);
+    return nullptr;
 }
 
 /*
@@ -202,28 +197,27 @@ int IoUring::get_listen_socket() const {
     return listen_socket_;
 }
 
-IoUring &IoUring::get_instance() {
-    static IoUring io_uring;
-    return io_uring;
-}
-
-void IoUring::handle_io(int res, IoUring::Request* req) {
+void IoUring::handle_io(int res, IoUring::Request* req, io_uring* ring) {
 
     switch (req->event_type) {
         case IoType::OP_ACCEPT:
             // An asynchronous accept request has been consumed, so add a new one
-            post_accept(get_listen_socket());
+            post_accept(get_listen_socket(), ring);
 
-            post_recv(res);
+            post_recv(res, ring);
+            LOG_F(INFO, "ACCEPT");
+            delete req;
             break;
         case IoType::OP_READ:
             if (!res) {
                 LOG_F(INFO, "Empty request!");
                 break;
             }
-            post_recv(res);
-            //handle_client_request(req);
-            delete static_cast<char*>(req->iov[0].iov_base);
+            LOG_F(INFO, "READ");
+            post_recv(req->client_socket, ring);
+
+            // this step doesn't need delete req,because we use it repeatedly
+            handle_request(req, ring);
             break;
         case IoType::OP_WRITE:
             /*
@@ -233,12 +227,13 @@ void IoUring::handle_io(int res, IoUring::Request* req) {
             for (int i = 0; i < req->iovec_count; i++) {
                 delete static_cast<char*>(req->iov[i].iov_base);
             }
+            delete req;
             break;
     }
-    delete req;
+
 }
 
-void IoUring::parse_data(IoUring::Request *request) {
+void IoUring::handle_request(IoUring::Request *request, io_uring* ring) {
 
     Packet packet;
     if(CoderSpace::Coder::decode(request, packet) == -1) {
@@ -246,10 +241,67 @@ void IoUring::parse_data(IoUring::Request *request) {
         return;
     }
 
-    // get session id to identify puppet or controller
+    switch (packet.messagetype()) {
+        case ObjectSpace::MessageType::PUPPET_LOGIN:
 
+            puppet_login(request, packet);
+            break;
+        case ObjectSpace::MessageType::CONTROLLER_LOGIN:
+
+            controller_login(request, packet);
+            break;
+        default:
+
+            forward_data(request, packet);
+    }
+    // return data to specify client according to logic
+    post_send(request, ring);
 
 }
+
+void IoUring::puppet_login(IoUring::Request *request, Packet &packet) {
+
+    // assign a unique session id
+    session_id_++;
+    // add in sessions
+    sessions_->add_puppet(session_id_, new ObjectSpace::Device(request->client_socket));
+    // only thing to change
+    packet.set_sessionid(session_id_);
+    // rewrite request according to packet
+    delete static_cast<char*>(request->iov[0].iov_base);
+    CoderSpace::Coder::encode(request, request->client_socket, packet);
+
+}
+
+void IoUring::controller_login(IoUring::Request *request, Packet &packet) {
+
+    // programming is still required
+    if (!sessions_->find(packet.sessionid())) {
+        // there is no corresponding puppet
+    }
+
+    sessions_->add_controller(packet.sessionid(), new ObjectSpace::Device(request->client_socket));
+
+    delete static_cast<char*>(request->iov[0].iov_base);
+}
+
+void IoUring::forward_data(IoUring::Request *request, Packet &packet) {
+
+    // get session id
+    uint32_t session_id = packet.sessionid();
+
+    // if highest bit is true , it's controller
+    if(session_id >> 31) {
+
+        request->client_socket = sessions_->getPuppet(session_id)->get_socket();
+    }
+    else {
+        request->client_socket = sessions_->getController(session_id)->get_socket();
+    }
+
+    request->event_type = IoType::OP_WRITE;
+}
+
 
 }
 
