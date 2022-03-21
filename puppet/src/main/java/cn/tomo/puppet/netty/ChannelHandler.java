@@ -1,6 +1,8 @@
 package cn.tomo.puppet.netty;
 
-import io.netty.channel.Channel;
+import cn.tomo.puppet.common.Command;
+import cn.tomo.puppet.handler.AbstractHandler;
+import cn.tomo.puppet.handler.HandlerContainer;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -10,12 +12,10 @@ public class ChannelHandler extends SimpleChannelInboundHandler<DataPacketProto.
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, DataPacketProto.Packet packet) throws Exception {
 
-        // test: send to server
-        Channel channel = channelHandlerContext.channel();
-
-        // transform to DataPacket
-        // packet.getClientId();
-
-        channel.writeAndFlush("I am server");
+        // dispatch message
+        Command command = Command.values()[packet.getMessageType()];
+        AbstractHandler handler = HandlerContainer.getHandler(command);
+        // dynamic
+        handler.handleIo(packet, channelHandlerContext.channel());
     }
 }

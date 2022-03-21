@@ -1,4 +1,4 @@
-package cn.tomo.puppet.netty;
+package cn.tomo.puppet.netty.coder;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

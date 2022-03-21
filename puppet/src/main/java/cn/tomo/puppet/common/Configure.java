@@ -11,6 +11,7 @@ public class Configure {
 
     private static final String configFileName = "puppet.properties";
     public static final Properties properties = new Properties();
+    private static int sessionId = 0;
 
     static {
         try {
@@ -20,6 +21,10 @@ public class Configure {
         } catch (IOException e) {
             Log.error(e.getMessage());
         }
+    }
+
+    public static void setSessionId(int sessionId) {
+        Configure.sessionId = sessionId;
     }
 
     public static int getPort() {

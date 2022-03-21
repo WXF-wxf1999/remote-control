@@ -6,8 +6,6 @@ public enum Command {
 
     CONTROLLER_LOGIN,
 
-    LOGIN_SUCCESS,
-
     DEVICE_NOT_ONLINE
 
 }
