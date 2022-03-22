@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <item
+        android:id="@+id/login"
+        android:title="@string/login" />
+    <item
+        android:id="@+id/control"
+        android:title="@string/control" />
+    <item
+        android:id="@+id/file"
+        android:title="@string/file" />
+
+
+</menu>
