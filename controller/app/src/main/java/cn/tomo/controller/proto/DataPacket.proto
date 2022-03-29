@@ -1,0 +1,22 @@
+// use proto3 grammar
+syntax = "proto3";
+
+// .proto file location
+package cn.tomo.puppet.proto;
+
+// proto java packet path
+option java_package = "";
+
+// proto class name
+option java_outer_classname="DataPacketProto";
+
+message Packet{
+
+  uint32 sessionId = 1;              // if high bit is true,it is controller,or,it's puppet
+
+  uint32 messageType = 2;           // type
+
+  bytes dataSegment1 = 3;          // first data segment
+
+  bytes dataSegment2 = 4;          // second data segment for expansion in future
+}

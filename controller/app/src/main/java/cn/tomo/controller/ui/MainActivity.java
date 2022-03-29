@@ -1,32 +1,114 @@
 package cn.tomo.controller.ui;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.view.menu.MenuPopupHelper;
 
+import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
-import java.lang.reflect.Field;
-
 import cn.tomo.controller.R;
+import cn.tomo.controller.common.Configure;
+import cn.tomo.controller.netty.NettyClient;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private final NettyClient nettyClient = new NettyClient();
+    private static AlertDialog dialog = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // hide status bar
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ImageButton menuButton = findViewById(R.id.top_menu_button);
-        menuButton.setOnClickListener(this);
-
-
+        Configure.initConfig(getResources().openRawResource(R.raw.controller));
+        initMenuButton();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    private void initMenuButton() {
+
+        ImageButton menuButton = findViewById(R.id.top_menu_button);
+        menuButton.setBackgroundColor(Color.TRANSPARENT);
+        menuButton.getBackground().setAlpha(200);
+
+        // make the button movable
+        menuButton.setOnTouchListener(new View.OnTouchListener() {
+            int lastX, lastY;
+            final int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // TODO Auto-generated method stub
+                int ea = event.getAction();
+                switch (ea) {
+                    case MotionEvent.ACTION_DOWN:
+                        lastX = (int) event.getRawX();
+                        lastY = (int) event.getRawY();
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+
+                        int dx = (int) event.getRawX() - lastX;
+                        int dy = (int) event.getRawY() - lastY;
+                        int left = v.getLeft() + dx;
+                        int top = v.getTop() + dy;
+                        int right = v.getRight() + dx;
+                        int bottom = v.getBottom() + dy;
+
+                        if (left < 0) {
+
+                            left = 0;
+                            right = left + v.getWidth();
+
+                        }
+                        if (right > screenWidth) {
+
+                            right = screenWidth;
+                            left = right - v.getWidth();
+
+                        }
+                        if (top < 0) {
+
+                            top = 0;
+                            bottom = top + v.getHeight();
+
+                        }
+                        if (bottom > screenHeight) {
+
+                            bottom = screenHeight;
+                            top = bottom - v.getHeight();
+
+                        }
+                        // reset button location
+                        v.layout(left, top, right, bottom);//按钮重画
+
+                        lastX = (int) event.getRawX();
+                        lastY = (int) event.getRawY();
+                        break;
+                }
+                return false;
+            }
+        });
+
+
+        menuButton.setOnClickListener(this);
+    }
     @Override
     public void onClick(View v) {
 
@@ -52,10 +134,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.login:
-                        Toast.makeText(MainActivity.this,"login", Toast.LENGTH_LONG).show();
+                        popLoginWindow();
                         break;
                     case R.id.control:
-                        Toast.makeText(MainActivity.this,"control",Toast.LENGTH_LONG).show();
+                        Toast.makeText(null,"control",Toast.LENGTH_LONG).show();
                         break;
                     case R.id.file:
                         Toast.makeText(MainActivity.this,"file",Toast.LENGTH_LONG).show();
@@ -70,5 +152,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         popupMenu.show();
 
+    }
+
+    private void popLoginWindow() {
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.activity_login, null);
+
+        EditText loginEditText = view.findViewById(R.id.session_edittext);
+        Button button = view.findViewById(R.id.login_button);
+
+        builder.setTitle("Login")
+                .setIcon(R.mipmap.ic_launcher_round)
+                .setView(view)
+                .create();
+
+        dialog = builder.show();
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String sessionId = loginEditText.getText().toString();
+                if(sessionId.length() == 0) {
+                    Toast.makeText(MainActivity.this, "please input the session id", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Configure.setSessionId(Integer.parseInt(sessionId));
+                nettyClient.start();
+           }
+        });
+
+    }
+
+    public static void shutDownLoginWindow() {
+        dialog.dismiss();
     }
 }
