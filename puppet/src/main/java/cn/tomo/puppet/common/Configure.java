@@ -27,6 +27,8 @@ public class Configure {
         Configure.sessionId = sessionId;
     }
 
+    public static int getSessionId() { return sessionId; }
+
     public static int getPort() {
         return Integer.parseInt(properties.getProperty("Port"));
     }

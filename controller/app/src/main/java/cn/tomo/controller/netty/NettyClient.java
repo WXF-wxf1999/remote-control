@@ -1,15 +1,19 @@
 package cn.tomo.controller.netty;
 
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.concurrent.Semaphore;
 
 import cn.tomo.controller.common.Command;
 import cn.tomo.controller.common.Configure;
+import cn.tomo.controller.proto.PacketBuilder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -23,10 +27,14 @@ import cn.tomo.controller.proto.DataPacketProto;
 public class NettyClient {
 
     private boolean isOk = false;
-
+    private static ChannelHandlerContext channelHandlerContext;
     private final Semaphore semaphore = new Semaphore(0,true);
-
+    private static Context context = null;
     private EventLoopGroup group = null;
+
+    public NettyClient(Context ctx) {
+        context = ctx;
+    }
     public void start() {
 
         group = new NioEventLoopGroup();
@@ -59,7 +67,7 @@ public class NettyClient {
         } catch (Exception e) {
 
             group.shutdownGracefully();
-
+            Toast.makeText(context, "can not connect with server!", Toast.LENGTH_LONG).show();
             Log.e(NettyClient.class.getName(), e.toString());
         }
 
@@ -68,20 +76,13 @@ public class NettyClient {
 
     protected void finalize() {
 
-        group.shutdownGracefully();
+        //group.shutdownGracefully();
     }
 
     private void login(Channel channel) {
 
-        //channel.writeAndFlush("I am puppet");
-        DataPacketProto.Packet.Builder builder = DataPacketProto.Packet.newBuilder();
+        DataPacketProto.Packet packet = PacketBuilder.buildPacket(Command.CONTROLLER_LOGIN, null, null);
 
-        builder.setSessionId(Configure.getSessionId());
-        builder.setMessageType(Command.CONTROLLER_LOGIN.ordinal());
-
-        DataPacketProto.Packet packet = builder.build();
-
-        // send
         channel.writeAndFlush(packet);
 
     }
@@ -116,6 +117,14 @@ public class NettyClient {
             }
             semaphore.release();
         }
+    }
+
+    public static ChannelHandlerContext getChannelHandlerContext() {
+        return channelHandlerContext;
+    }
+
+    public static void setChannelHandlerContext(ChannelHandlerContext ctx) {
+        channelHandlerContext = ctx;
     }
 }
 

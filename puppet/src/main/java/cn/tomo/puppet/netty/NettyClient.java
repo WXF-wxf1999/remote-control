@@ -62,7 +62,9 @@ public class NettyClient {
 
     protected void finalize() {
 
-        group.shutdownGracefully();
+        // why? add this line , the function will be called at soon, but in android,
+        // this will not happen
+        //group.shutdownGracefully();
     }
 
     private void login(Channel channel) {

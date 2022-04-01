@@ -15,7 +15,7 @@ public class HandlerContainer {
 
     static {
         handlerNames.put(Command.PUPPET_LOGIN, LoginHandler.class);
-        // handlerNames.put(Command.  ,"DesktopHandler");
+         handlerNames.put(Command.DESKTOP_CONTROL, DesktopHandler.class);
         // handlerNames.put(Command.  ,"FileHandler");
     }
 

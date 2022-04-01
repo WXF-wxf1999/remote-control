@@ -251,7 +251,6 @@ void IoUring::handle_request(IoUring::Request *request, io_uring* ring) {
             controller_login(request, packet);
             break;
         default:
-
             forward_data(request, packet);
     }
     // return data to specify client according to logic
@@ -267,7 +266,7 @@ void IoUring::puppet_login(IoUring::Request *request, Packet &packet) {
     sessions_->add_puppet(session_id_, new ObjectSpace::Device(request->client_socket));
     // only thing to change
     packet.set_sessionid(session_id_);
-    // rewrite request according to packet
+    // rewrite request according to packet now it's unnecessary
     delete static_cast<char*>(request->iov[0].iov_base);
     CoderSpace::Coder::encode(request, request->client_socket, packet);
 
@@ -275,14 +274,23 @@ void IoUring::puppet_login(IoUring::Request *request, Packet &packet) {
 
 void IoUring::controller_login(IoUring::Request *request, Packet &packet) {
 
+    uint32_t session_id = packet.sessionid();
+
+    // convert to right format
+    session_id = session_id & 0x01111111;
+
     // programming is still required
-    if (!sessions_->find(packet.sessionid())) {
+    if (!sessions_->find(session_id)) {
+        packet.set_messagetype(ObjectSpace::DEVICE_NOT_ONLINE);
         // there is no corresponding puppet
     }
+    else {
+        sessions_->add_controller(session_id, new ObjectSpace::Device(request->client_socket));
+        packet.set_messagetype(ObjectSpace::CONTROLLER_LOGIN);
+    }
+     delete static_cast<char*>(request->iov[0].iov_base);
+    CoderSpace::Coder::encode(request, request->client_socket, packet);
 
-    sessions_->add_controller(packet.sessionid(), new ObjectSpace::Device(request->client_socket));
-
-    delete static_cast<char*>(request->iov[0].iov_base);
 }
 
 void IoUring::forward_data(IoUring::Request *request, Packet &packet) {
@@ -292,14 +300,17 @@ void IoUring::forward_data(IoUring::Request *request, Packet &packet) {
 
     // if highest bit is true , it's controller
     if(session_id >> 31) {
-
+        session_id = session_id & 0x01111111;
         request->client_socket = sessions_->getPuppet(session_id)->get_socket();
     }
     else {
         request->client_socket = sessions_->getController(session_id)->get_socket();
     }
-
+    request->iovec_count = 1;
     request->event_type = IoType::OP_WRITE;
+//    delete static_cast<char*>(request->iov[0].iov_base);
+//    CoderSpace::Coder::encode(request, request->client_socket, packet);
+
 }
 
 

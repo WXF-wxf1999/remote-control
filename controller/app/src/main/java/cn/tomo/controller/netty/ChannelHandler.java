@@ -3,6 +3,7 @@ package cn.tomo.controller.netty;
 import cn.tomo.controller.common.Command;
 import cn.tomo.controller.handler.AbstractHandler;
 import cn.tomo.controller.handler.HandlerContainer;
+import cn.tomo.controller.proto.PacketBuilder;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -17,6 +18,7 @@ public class ChannelHandler extends SimpleChannelInboundHandler<DataPacketProto.
         Command command = Command.values()[packet.getMessageType()];
         AbstractHandler handler = HandlerContainer.getHandler(command);
         // dynamic
-        handler.handleIo(packet, channelHandlerContext.channel());
+        handler.handleIo(packet, channelHandlerContext);
+
     }
 }

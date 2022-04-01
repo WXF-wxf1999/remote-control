@@ -3,6 +3,7 @@ package cn.tomo.puppet.netty;
 import cn.tomo.puppet.common.Command;
 import cn.tomo.puppet.handler.AbstractHandler;
 import cn.tomo.puppet.handler.HandlerContainer;
+import cn.tomo.puppet.proto.PacketBuilder;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -12,10 +13,12 @@ public class ChannelHandler extends SimpleChannelInboundHandler<DataPacketProto.
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, DataPacketProto.Packet packet) throws Exception {
 
+
         // dispatch message
         Command command = Command.values()[packet.getMessageType()];
         AbstractHandler handler = HandlerContainer.getHandler(command);
         // dynamic
-        handler.handleIo(packet, channelHandlerContext.channel());
+        handler.handleIo(packet, channelHandlerContext);
+
     }
 }

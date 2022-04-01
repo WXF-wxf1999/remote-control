@@ -4,6 +4,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -17,12 +18,15 @@ import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import cn.tomo.controller.R;
+import cn.tomo.controller.common.Command;
 import cn.tomo.controller.common.Configure;
 import cn.tomo.controller.netty.NettyClient;
+import cn.tomo.controller.proto.DataPacketProto;
+import cn.tomo.controller.proto.PacketBuilder;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final NettyClient nettyClient = new NettyClient();
+    private final NettyClient nettyClient = new NettyClient(MainActivity.this);
     private static AlertDialog dialog = null;
 
     @Override
@@ -38,6 +42,96 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initMenuButton();
     }
 
+    @Override
+    public void onClick(View v) {
+        if(v.getId() == R.id.top_menu_button) {
+            popMenu(v);
+        }
+    }
+
+    private void popMenu(View v) {
+
+        PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
+
+        // load menu resource
+        popupMenu.getMenuInflater().inflate(R.menu.top_menu, popupMenu.getMenu());
+
+        // listen event from menu
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.login:
+                        popLoginWindow();
+                        break;
+                    case R.id.control:
+                        // start control
+                        startControl();
+                        break;
+                    case R.id.file:
+                        Toast.makeText(MainActivity.this,"file",Toast.LENGTH_LONG).show();
+                        break;
+                    default:
+                        break;
+                }
+                return false;
+            }
+        });
+
+
+        popupMenu.show();
+
+    }
+
+    private void popLoginWindow() {
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = View.inflate(this, R.layout.activity_login, null);
+
+        EditText loginEditText = view.findViewById(R.id.session_edittext);
+        Button button = view.findViewById(R.id.login_button);
+
+        builder.setTitle("Login")
+                .setIcon(R.mipmap.ic_launcher_round)
+                .setView(view)
+                .create();
+
+        dialog = builder.show();
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String sessionId = loginEditText.getText().toString();
+                if(sessionId.length() == 0) {
+                    Toast.makeText(MainActivity.this, "please input the session id", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Configure.setSessionId(Integer.parseInt(sessionId));
+                nettyClient.start();
+           }
+        });
+
+    }
+
+    public static void shutDownLoginWindow() {
+        dialog.dismiss();
+    }
+
+    public void startControl() {
+
+        // check user has login
+        if(Configure.getSessionId() == 0) {
+
+            Toast.makeText(MainActivity.this, "please login first!", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        DataPacketProto.Packet packet = PacketBuilder.buildPacket(Command.DESKTOP_CONTROL, null, null);
+        // send command
+        NettyClient.getChannelHandlerContext().channel().writeAndFlush(packet);
+
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private void initMenuButton() {
 
@@ -51,7 +145,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             final int screenHeight = getResources().getDisplayMetrics().heightPixels;
             final int screenWidth = getResources().getDisplayMetrics().widthPixels;
 
-            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 // TODO Auto-generated method stub
@@ -108,83 +201,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         menuButton.setOnClickListener(this);
-    }
-    @Override
-    public void onClick(View v) {
-
-        switch (v.getId()) {
-            case R.id.top_menu_button:
-                popMenu(v);
-                break;
-
-        }
-
-    }
-
-    private void popMenu(View v) {
-
-        PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
-
-        // load menu resource
-        popupMenu.getMenuInflater().inflate(R.menu.top_menu, popupMenu.getMenu());
-
-        // listen event from menu
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.login:
-                        popLoginWindow();
-                        break;
-                    case R.id.control:
-                        Toast.makeText(null,"control",Toast.LENGTH_LONG).show();
-                        break;
-                    case R.id.file:
-                        Toast.makeText(MainActivity.this,"file",Toast.LENGTH_LONG).show();
-                        break;
-                    default:
-                        break;
-                }
-                return false;
-            }
-        });
-
-
-        popupMenu.show();
-
-    }
-
-    private void popLoginWindow() {
-
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = View.inflate(this, R.layout.activity_login, null);
-
-        EditText loginEditText = view.findViewById(R.id.session_edittext);
-        Button button = view.findViewById(R.id.login_button);
-
-        builder.setTitle("Login")
-                .setIcon(R.mipmap.ic_launcher_round)
-                .setView(view)
-                .create();
-
-        dialog = builder.show();
-
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String sessionId = loginEditText.getText().toString();
-                if(sessionId.length() == 0) {
-                    Toast.makeText(MainActivity.this, "please input the session id", Toast.LENGTH_LONG).show();
-                    return;
-                }
-                Configure.setSessionId(Integer.parseInt(sessionId));
-                nettyClient.start();
-           }
-        });
-
-    }
-
-    public static void shutDownLoginWindow() {
-        dialog.dismiss();
     }
 }

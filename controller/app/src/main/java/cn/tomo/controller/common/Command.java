@@ -6,6 +6,8 @@ public enum Command {
 
     CONTROLLER_LOGIN,
 
-    DEVICE_NOT_ONLINE
+    DEVICE_NOT_ONLINE,
+
+    DESKTOP_CONTROL
 
 }

@@ -8,8 +8,7 @@ namespace ObjectSpace {
 enum MessageType {
     PUPPET_LOGIN = 0,
     CONTROLLER_LOGIN = 1,
-    LOGIN_SUCCESS = 2,
-    DEVICE_NOT_ONLINE = 3
+    DEVICE_NOT_ONLINE = 2
 };
 
 class Device {
