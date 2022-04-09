@@ -1,7 +1,6 @@
 package cn.tomo.puppet.handler;
 
 import cn.tomo.puppet.proto.DataPacketProto;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
 public class AbstractHandler {

@@ -2,9 +2,11 @@ package cn.tomo.controller.ui;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
+import androidx.core.app.ActivityCompat;
 import android.annotation.SuppressLint;
-import android.content.Context;
+import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -14,6 +16,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
@@ -23,11 +26,13 @@ import cn.tomo.controller.common.Configure;
 import cn.tomo.controller.netty.NettyClient;
 import cn.tomo.controller.proto.DataPacketProto;
 import cn.tomo.controller.proto.PacketBuilder;
+import cn.tomo.controller.robot.ScreenRobot;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final NettyClient nettyClient = new NettyClient(MainActivity.this);
+    private final NettyClient nettyClient = new NettyClient();
     private static AlertDialog dialog = null;
+    private ImageView imageView = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,9 +43,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        imageView = findViewById(R.id.image_view);
+
+        // initialize the configure object
+        Configure.setMainActivity(this);
         Configure.initConfig(getResources().openRawResource(R.raw.controller));
+
+        verifyStoragePermissions(this);
+
         initMenuButton();
+
     }
+
+    //先定义
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+
+    private static String[] PERMISSIONS_STORAGE = {
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE" };
+
+    //然后通过一个函数来申请
+    public void verifyStoragePermissions(Activity activity) {
+        try {
+            //检测是否有写的权限
+            int permission = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 没有写的权限，去申请写的权限，会弹出对话框
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,REQUEST_EXTERNAL_STORAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public void onClick(View v) {
@@ -126,10 +162,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
 
+        ScreenRobot.requestScreen();
+
+    }
+
+    public void imageShow(Bitmap bitmap) {
+        imageView.setImageBitmap(bitmap);
+        imageView.postInvalidate();
+
         DataPacketProto.Packet packet = PacketBuilder.buildPacket(Command.DESKTOP_CONTROL, null, null);
         // send command
         NettyClient.getChannelHandlerContext().channel().writeAndFlush(packet);
-
     }
 
     @SuppressLint("ClickableViewAccessibility")

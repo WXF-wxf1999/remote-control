@@ -11,14 +11,20 @@ public class Decoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
 
-        if(byteBuf.readableBytes() < 4) {
-            return;
-        }
+        int recvLength = byteBuf.readableBytes();
 
         // read from begin
-        byteBuf.markReaderIndex();
+        byteBuf.resetReaderIndex();
 
         int length = byteBuf.readIntLE();
+
+        // if the received data is too long, netty will call decode some times,
+        // so, we verify the data length,if length is not enough,return
+//        if(recvLength != length + 4) {
+//            byteBuf.resetReaderIndex();
+//            return;
+//        }
+
         if(length < 0) {
             channelHandlerContext.close();
         }

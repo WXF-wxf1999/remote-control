@@ -1,11 +1,7 @@
 package cn.tomo.puppet.handler;
 
-import cn.tomo.puppet.Puppet;
-import cn.tomo.puppet.common.Command;
 import cn.tomo.puppet.common.Configure;
 import cn.tomo.puppet.proto.DataPacketProto;
-import cn.tomo.puppet.proto.PacketBuilder;
-import io.netty.channel.Channel;
 import cn.tomo.puppet.ui.PuppetUi;
 import io.netty.channel.ChannelHandlerContext;
 

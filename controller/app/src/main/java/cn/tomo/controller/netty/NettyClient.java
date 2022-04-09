@@ -1,11 +1,8 @@
 package cn.tomo.controller.netty;
 
-import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
-
 import java.util.concurrent.Semaphore;
-
 import cn.tomo.controller.common.Command;
 import cn.tomo.controller.common.Configure;
 import cn.tomo.controller.proto.PacketBuilder;
@@ -15,12 +12,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
 import cn.tomo.controller.netty.coder.*;
 import cn.tomo.controller.proto.DataPacketProto;
 
@@ -29,28 +27,26 @@ public class NettyClient {
     private boolean isOk = false;
     private static ChannelHandlerContext channelHandlerContext;
     private final Semaphore semaphore = new Semaphore(0,true);
-    private static Context context = null;
-    private EventLoopGroup group = null;
 
-    public NettyClient(Context ctx) {
-        context = ctx;
-    }
     public void start() {
 
-        group = new NioEventLoopGroup();
+        EventLoopGroup group = new NioEventLoopGroup(10);
 
         try {
             Bootstrap bootstrap = new Bootstrap()
                     .group(group)
                     .channel(NioSocketChannel.class)
+                    // default rec buffer length is 1kb, must set the buffer length manually
+                    .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(Configure.getBufferLength()))
+
                     .handler(new ChannelInitializer<SocketChannel>() {
 
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
 
-                            // get pipeline
+                            socketChannel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(Configure.getBufferLength()));
+                          // get pipeline
                             ChannelPipeline pipeline = socketChannel.pipeline();
-
                             // must add a decoder or will not receive a message
                             // channelRead will be called in ByteToMessageDecoder, the our channelRead0 will work
                             pipeline.addLast(new Decoder());
@@ -67,7 +63,7 @@ public class NettyClient {
         } catch (Exception e) {
 
             group.shutdownGracefully();
-            Toast.makeText(context, "can not connect with server!", Toast.LENGTH_LONG).show();
+            Toast.makeText(Configure.getMainActivity(), "can not connect with server!", Toast.LENGTH_LONG).show();
             Log.e(NettyClient.class.getName(), e.toString());
         }
 

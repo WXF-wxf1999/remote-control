@@ -1,5 +1,6 @@
 package cn.tomo.controller.common;
 
+import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
@@ -8,11 +9,27 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Properties;
 
+import cn.tomo.controller.ui.MainActivity;
+
 public class Configure {
 
     private static final String configFileName = "raw/puppet.properties";
     public static final Properties properties = new Properties();
     private static int sessionId = 0;
+    private static final int bufferLength = 1024*1024*10;
+    private static MainActivity mainActivity = null;
+
+    public static MainActivity getMainActivity() {
+        return mainActivity;
+    }
+
+    public static void setMainActivity(MainActivity mainActivity) {
+        Configure.mainActivity = mainActivity;
+    }
+
+    public static int getBufferLength() {
+        return bufferLength;
+    }
 
     public static void initConfig(InputStream in) {
         try {

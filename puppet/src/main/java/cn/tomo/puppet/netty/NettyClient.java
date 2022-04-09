@@ -7,12 +7,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import java.util.concurrent.Semaphore;
-
 import cn.tomo.puppet.common.Configure;
 import cn.tomo.puppet.common.Log;
 import cn.tomo.puppet.common.Command;
 import cn.tomo.puppet.netty.coder.*;
-
 
 public class NettyClient {
 
@@ -20,27 +18,30 @@ public class NettyClient {
 
     private final Semaphore semaphore = new Semaphore(0,true);
 
-    private EventLoopGroup  group = null;
     public void start() {
 
-        group = new NioEventLoopGroup();
+        EventLoopGroup group = new NioEventLoopGroup();
 
         try {
             Bootstrap bootstrap = new Bootstrap()
                     .group(group)
                     .channel(NioSocketChannel.class)
+                    .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(1048576))
+                    .option(ChannelOption.SO_SNDBUF, 1024*1024)
                     .handler(new ChannelInitializer<SocketChannel>() {
 
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
 
+
                             // get pipeline
                             ChannelPipeline pipeline = socketChannel.pipeline();
-
-                            // must add a decoder or will not receive a message
+                           // must add a decoder or will not receive a message
                             // channelRead will be called in ByteToMessageDecoder, the our channelRead0 will work
                             pipeline.addLast(new Decoder());
+                            //pipeline.addLast(new LengthFieldPrepender(4));
                             pipeline.addLast(new Encoder());
+
                             // add our handler
                             pipeline.addLast(new ChannelHandler());
 
@@ -69,12 +70,9 @@ public class NettyClient {
 
     private void login(Channel channel) {
 
-        //channel.writeAndFlush("I am puppet");
         DataPacketProto.Packet.Builder builder = DataPacketProto.Packet.newBuilder();
-
         builder.setSessionId(0);
         builder.setMessageType(Command.PUPPET_LOGIN.ordinal());
-
         DataPacketProto.Packet packet = builder.build();
 
         // send

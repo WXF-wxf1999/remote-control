@@ -47,7 +47,7 @@ private:
     int  get_listen_socket() const;
     void handle_request(Request* request, io_uring* ring);
     static void* wait_request(void* parameter);
-    void forward_data(Request *request, Packet& packet);
+    void forward_data(Request *request, Packet& packet, io_uring* ring);
     void puppet_login(Request *request, Packet& packet);
     void controller_login(Request *request, Packet& packet);
 

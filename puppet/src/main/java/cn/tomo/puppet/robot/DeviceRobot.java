@@ -9,7 +9,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class DeviceRobot {
-
     public static byte[] getScreen() {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -18,11 +17,12 @@ public class DeviceRobot {
             // get screen data
             BufferedImage screenCapture = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
 
-            ImageIO.write(screenCapture, "jpg", byteArrayOutputStream);
+            ImageIO.write(screenCapture, "png", byteArrayOutputStream);
 
         } catch (AWTException | IOException e) {
             Log.error(e.toString());
         }
         return byteArrayOutputStream.toByteArray();
     }
+
 }

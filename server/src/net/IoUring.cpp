@@ -175,6 +175,7 @@ void* IoUring::wait_request(void* parameter) {
 
         if (res < 0) {
             LOG_F(ERROR, "Async request failed: %s for event: %d\n", strerror(res), req->event_type);
+            //continue;
             return nullptr;
         }
 
@@ -197,13 +198,25 @@ int IoUring::get_listen_socket() const {
     return listen_socket_;
 }
 
+uint32_t receive(int socket, char* buffer, uint32_t size) {
+
+    uint32_t receive_len = 0;
+    uint32_t total_len = 0;
+
+    receive_len = recv(socket, buffer, size, 0);
+    total_len = *(uint32_t*)buffer + sizeof(int);
+    while (receive_len != total_len) {
+        receive_len += recv(socket,buffer + receive_len,size - receive_len,0);
+    }
+    return total_len;
+}
+
 void IoUring::handle_io(int res, IoUring::Request* req, io_uring* ring) {
 
     switch (req->event_type) {
         case IoType::OP_ACCEPT:
             // An asynchronous accept request has been consumed, so add a new one
             post_accept(get_listen_socket(), ring);
-
             post_recv(res, ring);
             LOG_F(INFO, "ACCEPT");
             delete req;
@@ -214,8 +227,6 @@ void IoUring::handle_io(int res, IoUring::Request* req, io_uring* ring) {
                 break;
             }
             LOG_F(INFO, "READ");
-            post_recv(req->client_socket, ring);
-
             // this step doesn't need delete req,because we use it repeatedly
             handle_request(req, ring);
             break;
@@ -237,6 +248,7 @@ void IoUring::handle_request(IoUring::Request *request, io_uring* ring) {
 
     Packet packet;
     if(CoderSpace::Coder::decode(request, packet) == -1) {
+
         LOG_F(INFO, "receive a malformed packet");
         return;
     }
@@ -245,17 +257,19 @@ void IoUring::handle_request(IoUring::Request *request, io_uring* ring) {
         case ObjectSpace::MessageType::PUPPET_LOGIN:
 
             puppet_login(request, packet);
+            post_send(request, ring);
             break;
         case ObjectSpace::MessageType::CONTROLLER_LOGIN:
 
             controller_login(request, packet);
+            post_recv(request->client_socket, ring);
+            post_send(request, ring);
             break;
+            // must come from controller, the puppet only send message one time
         default:
-            forward_data(request, packet);
+            post_recv(request->client_socket, ring);
+            forward_data(request, packet, ring);
     }
-    // return data to specify client according to logic
-    post_send(request, ring);
-
 }
 
 void IoUring::puppet_login(IoUring::Request *request, Packet &packet) {
@@ -293,23 +307,39 @@ void IoUring::controller_login(IoUring::Request *request, Packet &packet) {
 
 }
 
-void IoUring::forward_data(IoUring::Request *request, Packet &packet) {
+static const uint32_t g_buffer_size = 1024*1024*3;
+static char* const g_buffer = new char[g_buffer_size]{0};
+
+void IoUring::forward_data(IoUring::Request *request, Packet &packet,io_uring* ring) {
 
     // get session id
     uint32_t session_id = packet.sessionid();
 
+    int client_socket = 0;
+
     // if highest bit is true , it's controller
     if(session_id >> 31) {
+        // no need now
         session_id = session_id & 0x01111111;
-        request->client_socket = sessions_->getPuppet(session_id)->get_socket();
+        client_socket = sessions_->getPuppet(session_id)->get_socket();
     }
     else {
-        request->client_socket = sessions_->getController(session_id)->get_socket();
+
+        client_socket = sessions_->getController(session_id)->get_socket();
     }
-    request->iovec_count = 1;
-    request->event_type = IoType::OP_WRITE;
-//    delete static_cast<char*>(request->iov[0].iov_base);
-//    CoderSpace::Coder::encode(request, request->client_socket, packet);
+
+    size_t send_len = packet.ByteSizeLong() + 4;
+
+    // relay message to puppet
+    long return_len = 0;
+    send(client_socket, request->iov[0].iov_base, send_len, 0);
+    // receive the message from puppet
+    return_len = receive(client_socket, g_buffer, g_buffer_size);
+    // return the result to controller
+    send(request->client_socket, g_buffer, return_len, 0);
+
+    delete static_cast<char*>(request->iov[0].iov_base);
+    delete request;
 
 }
 
