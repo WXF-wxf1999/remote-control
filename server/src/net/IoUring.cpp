@@ -198,7 +198,7 @@ int IoUring::get_listen_socket() const {
     return listen_socket_;
 }
 
-uint32_t receive(int socket, char* buffer, uint32_t size) {
+uint32_t IoUring::receive(int socket, char* buffer, uint32_t size) {
 
     uint32_t receive_len = 0;
     uint32_t total_len = 0;
@@ -308,10 +308,13 @@ void IoUring::controller_login(IoUring::Request *request, Packet &packet) {
 }
 
 static const uint32_t g_buffer_size = 1024*1024*3;
-static char* const g_buffer = new char[g_buffer_size]{0};
+static __thread char* g_buffer = nullptr;
 
 void IoUring::forward_data(IoUring::Request *request, Packet &packet,io_uring* ring) {
 
+    if(g_buffer == nullptr) {
+        g_buffer = new char[g_buffer_size]{0};
+    }
     // get session id
     uint32_t session_id = packet.sessionid();
 

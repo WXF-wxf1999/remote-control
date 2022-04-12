@@ -12,29 +12,20 @@ public class LoginHandler extends AbstractHandler {
     @Override
     public void handleIo(DataPacketProto.Packet packet, ChannelHandlerContext ctx) {
 
-        String message = null;
         int messageType = packet.getMessageType();
-
-        MainActivity.shutDownLoginWindow();
 
         // close login window and store the ctx so that we can send message to puppet on our own initiative
         if(messageType == Command.CONTROLLER_LOGIN.ordinal()) {
 
             // set ChannelHandlerContext ,we can send message on our own initiative
             NettyClient.setChannelHandlerContext(ctx);
-            message = "login successfully!";
-
+            MainActivity.shutDownLoginWindow();
         }
-        else if(messageType == Command.DEVICE_NOT_ONLINE.ordinal()) {
-            message = "device is not online!";
-        }
-        else {
-            message = "some unknown error occurs! ";
-        }
-        AlertDialog alertDialog1 = new AlertDialog.Builder(Configure.getMainActivity())
-                .setTitle("tips:")//标题
-                .setMessage(message)//内容
-                .create();
-        alertDialog1.show();
+//        else if(messageType == Command.DEVICE_NOT_ONLINE.ordinal()) {
+//            message = "device is not online!";
+//        }
+//        else {
+//            message = "some unknown error occurs! ";
+//        }
     }
 }

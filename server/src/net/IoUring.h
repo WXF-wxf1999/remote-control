@@ -50,6 +50,7 @@ private:
     void forward_data(Request *request, Packet& packet, io_uring* ring);
     void puppet_login(Request *request, Packet& packet);
     void controller_login(Request *request, Packet& packet);
+    static uint32_t receive(int socket, char* buffer, uint32_t size);
 
 private:
     int               session_id_;

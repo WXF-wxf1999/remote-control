@@ -5,10 +5,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,12 +34,16 @@ import cn.tomo.controller.netty.NettyClient;
 import cn.tomo.controller.proto.DataPacketProto;
 import cn.tomo.controller.proto.PacketBuilder;
 import cn.tomo.controller.robot.ScreenRobot;
+import kotlin.jvm.Synchronized;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final NettyClient nettyClient = new NettyClient();
     private static AlertDialog dialog = null;
     private ImageView imageView = null;
+    private Handler handler = null;
+    private int screenHeight = 0;
+    private int screenWidth = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +56,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         imageView = findViewById(R.id.image_view);
 
+        screenHeight = getScreenHeight(this);
+        screenWidth = getScreenWidth(this);
+
         // initialize the configure object
         Configure.setMainActivity(this);
         Configure.initConfig(getResources().openRawResource(R.raw.controller));
@@ -53,8 +67,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         initMenuButton();
 
+        handler = new Handler(new Handler.Callback() {
+
+            @Override
+            public boolean handleMessage(Message msg) {
+                switch (msg.what) {
+                    case 0:
+                    imageView.setImageBitmap((Bitmap) msg.obj);
+                }
+                return false;
+            }
+
+        });
     }
 
+    // 获得屏幕的宽度
+    public static int getScreenWidth(Context ctx) {
+        // 从系统服务中获取窗口管理器
+        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics dm = new DisplayMetrics();
+        // 从默认显示器中获取显示参数保存到dm对象中
+        wm.getDefaultDisplay().getMetrics(dm);
+        return dm.widthPixels; // 返回屏幕的宽度数值
+    }
+
+    // 获得屏幕的高度
+    public static int getScreenHeight(Context ctx) {
+        // 从系统服务中获取窗口管理器
+        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics dm = new DisplayMetrics();
+        // 从默认显示器中获取显示参数保存到dm对象中
+        wm.getDefaultDisplay().getMetrics(dm);
+        return dm.heightPixels; // 返回屏幕的高度数值
+    }
     //先定义
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
 
@@ -166,13 +211,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    public void imageShow(Bitmap bitmap) {
-        imageView.setImageBitmap(bitmap);
-        imageView.postInvalidate();
+    public void imageShow(byte[] screenData) {
 
-        DataPacketProto.Packet packet = PacketBuilder.buildPacket(Command.DESKTOP_CONTROL, null, null);
-        // send command
-        NettyClient.getChannelHandlerContext().channel().writeAndFlush(packet);
+        synchronized(this) {
+            Bitmap bitmap = BitmapFactory.decodeByteArray(screenData,0, screenData.length);
+            bitmap = Bitmap.createScaledBitmap(bitmap, imageView.getWidth(), imageView.getHeight(), true);
+
+        try{
+            imageView.setImageBitmap(bitmap);
+            imageView.postInvalidate();
+        }finally {
+            //Log.i("screen","screen");
+        }
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
