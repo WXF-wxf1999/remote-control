@@ -26,8 +26,8 @@ public class NettyClient {
             Bootstrap bootstrap = new Bootstrap()
                     .group(group)
                     .channel(NioSocketChannel.class)
-                    .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(1048576))
-                    .option(ChannelOption.SO_SNDBUF, 1024*1024)
+                    .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(Configure.getBufferLength()))
+                    .option(ChannelOption.SO_SNDBUF, Configure.getBufferLength())
                     .handler(new ChannelInitializer<SocketChannel>() {
 
                         @Override

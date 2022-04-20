@@ -1,6 +1,10 @@
 package cn.tomo.controller.robot;
 
+import android.util.Log;
+
 import java.util.Timer;
+import java.util.TimerTask;
+
 import cn.tomo.controller.common.Command;
 import cn.tomo.controller.netty.NettyClient;
 import cn.tomo.controller.proto.DataPacketProto;
@@ -15,6 +19,7 @@ public class ScreenRobot {
         DataPacketProto.Packet packet = PacketBuilder.buildPacket(Command.DESKTOP_CONTROL, null, null);
         // send command
         NettyClient.getChannelHandlerContext().channel().writeAndFlush(packet);
+
 //        TimerTask task = new TimerTask() {
 //            @Override
 //            public void run() {
@@ -27,7 +32,7 @@ public class ScreenRobot {
 //
 //        timer = new Timer();
 //
-//        long intervalPeriod = 1000;
+//        long intervalPeriod = 400;
 //
 //        // schedules the task to be run in an interval
 //        timer.scheduleAtFixedRate(task, 0, intervalPeriod);
@@ -39,25 +44,5 @@ public class ScreenRobot {
             timer.cancel();
         }
     }
-//    public static  synchronized void collectScreenImage(DataPacketProto.Packet packet) {
-//
-//        byte[] screenData = packet.getDataSegment1().toByteArray();
-//
-//        recvData.put(screenData);
-//        recvLength += screenData.length;
-//
-//        Log.i("asas","recvData"+recvLength);
-//        if(packet.getDataSegment2().toByteArray().length != 0) {
-//
-//            try {
-//                Bitmap bitmap = BitmapFactory.decodeByteArray(recvData.array(),0,recvLength);
-//                Configure.getMainActivity().imageShow(bitmap);
-//                recvLength = 0;
-//                recvData.clear();
-//            } catch (Exception e) {
-//                Log.d(DesktopHandler.class.getName(), e.toString());
-//            }
-//        }
-//
-//    }
+
 }

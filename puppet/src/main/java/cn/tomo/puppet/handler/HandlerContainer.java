@@ -15,8 +15,11 @@ public class HandlerContainer {
 
     static {
         handlerNames.put(Command.PUPPET_LOGIN, LoginHandler.class);
-         handlerNames.put(Command.DESKTOP_CONTROL, DesktopHandler.class);
-        // handlerNames.put(Command.  ,"FileHandler");
+        handlerNames.put(Command.DESKTOP_CONTROL, DesktopHandler.class);
+        handlerNames.put(Command.CURSOR_CONTROL_LEFT_DOWN, CursorHandler.class);
+        handlerNames.put(Command.CURSOR_CONTROL_RIGHT_DOWN, CursorHandler.class);
+        handlerNames.put(Command.CURSOR_CONTROL_WHEEL, CursorHandler.class);
+
     }
 
     public static AbstractHandler getHandler(Command command) {

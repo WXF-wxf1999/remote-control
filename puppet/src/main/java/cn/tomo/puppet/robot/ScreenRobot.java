@@ -6,12 +6,23 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class DeviceRobot {
+public class ScreenRobot {
 
     private static byte[] lastScreenData = null;
+    private static BufferedImage cursor = null;
+
+    static {
+        try {
+            cursor = ImageIO.read(new File("cursor.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static byte[] getScreen() {
 
         while (true) {
@@ -20,7 +31,8 @@ public class DeviceRobot {
 
                 // get screen data
                 BufferedImage screenCapture = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-
+                Point p= MouseInfo.getPointerInfo().getLocation();
+                screenCapture.createGraphics().drawImage(cursor, p.x, p.y, null);
                 ImageIO.write(screenCapture, "png", byteArrayOutputStream);
 
             } catch (AWTException | IOException e) {

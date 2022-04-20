@@ -6,6 +6,7 @@ import androidx.core.app.ActivityCompat;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ComponentInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -33,6 +34,7 @@ import cn.tomo.controller.common.Configure;
 import cn.tomo.controller.netty.NettyClient;
 import cn.tomo.controller.proto.DataPacketProto;
 import cn.tomo.controller.proto.PacketBuilder;
+import cn.tomo.controller.robot.CursorRobot;
 import cn.tomo.controller.robot.ScreenRobot;
 import kotlin.jvm.Synchronized;
 
@@ -42,8 +44,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static AlertDialog dialog = null;
     private ImageView imageView = null;
     private Handler handler = null;
-    private int screenHeight = 0;
-    private int screenWidth = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,10 +55,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         imageView = findViewById(R.id.image_view);
-
-        screenHeight = getScreenHeight(this);
-        screenWidth = getScreenWidth(this);
-
+//        // set touch listen event
+//        imageView.setEnabled(true);
+//        imageView.setOnTouchListener(new CursorRobot());
         // initialize the configure object
         Configure.setMainActivity(this);
         Configure.initConfig(getResources().openRawResource(R.raw.controller));
@@ -81,40 +80,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
-    // 获得屏幕的宽度
-    public static int getScreenWidth(Context ctx) {
-        // 从系统服务中获取窗口管理器
-        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics dm = new DisplayMetrics();
-        // 从默认显示器中获取显示参数保存到dm对象中
-        wm.getDefaultDisplay().getMetrics(dm);
-        return dm.widthPixels; // 返回屏幕的宽度数值
-    }
-
-    // 获得屏幕的高度
-    public static int getScreenHeight(Context ctx) {
-        // 从系统服务中获取窗口管理器
-        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics dm = new DisplayMetrics();
-        // 从默认显示器中获取显示参数保存到dm对象中
-        wm.getDefaultDisplay().getMetrics(dm);
-        return dm.heightPixels; // 返回屏幕的高度数值
-    }
-    //先定义
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
 
     private static String[] PERMISSIONS_STORAGE = {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE" };
 
-    //然后通过一个函数来申请
+    // require privilege
     public void verifyStoragePermissions(Activity activity) {
         try {
-            //检测是否有写的权限
+            // check write privilege
             int permission = ActivityCompat.checkSelfPermission(activity,
                     "android.permission.WRITE_EXTERNAL_STORAGE");
             if (permission != PackageManager.PERMISSION_GRANTED) {
-                // 没有写的权限，去申请写的权限，会弹出对话框
+                // require and pop window
                 ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,REQUEST_EXTERNAL_STORAGE);
             }
         } catch (Exception e) {
@@ -209,19 +188,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         ScreenRobot.requestScreen();
 
+        // set touch listen event
+        imageView.setEnabled(true);
+        imageView.setOnTouchListener(new CursorRobot());
+
     }
 
-    public void imageShow(byte[] screenData) {
+    public void imageShow(Bitmap srcBitmap) {
 
         synchronized(this) {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(screenData,0, screenData.length);
-            bitmap = Bitmap.createScaledBitmap(bitmap, imageView.getWidth(), imageView.getHeight(), true);
-
+            Bitmap bitmap = Bitmap.createScaledBitmap(srcBitmap, imageView.getWidth(), imageView.getHeight(), true);
         try{
             imageView.setImageBitmap(bitmap);
             imageView.postInvalidate();
         }finally {
-            //Log.i("screen","screen");
+            Log.i("perperperperperpr","fsfsf"+ bitmap.getByteCount());
         }
         }
     }
@@ -233,11 +214,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         menuButton.setBackgroundColor(Color.TRANSPARENT);
         menuButton.getBackground().setAlpha(200);
 
+        final int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+
+        Configure.setControllerScreenWidth(screenWidth);
+        Configure.setControllerScreenHeight(screenHeight);
+
         // make the button movable
         menuButton.setOnTouchListener(new View.OnTouchListener() {
             int lastX, lastY;
-            final int screenHeight = getResources().getDisplayMetrics().heightPixels;
-            final int screenWidth = getResources().getDisplayMetrics().widthPixels;
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {

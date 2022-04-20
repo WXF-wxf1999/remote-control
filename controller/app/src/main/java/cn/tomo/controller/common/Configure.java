@@ -18,6 +18,48 @@ public class Configure {
     private static int sessionId = 0;
     private static final int bufferLength = 1024*1024*10;
     private static MainActivity mainActivity = null;
+    private static int puppetScreenWidth = 0;
+    private static int getPuppetScreenHeight = 0;
+    private static boolean initScreen = false;
+    private static int controllerScreenWidth = 0;
+    private static int ControllerScreenHeight = 0;
+
+    public static int getControllerScreenWidth() {
+        return controllerScreenWidth;
+    }
+
+    public static void setControllerScreenWidth(int controllerScreenWidth) {
+        Configure.controllerScreenWidth = controllerScreenWidth;
+    }
+
+    public static int getControllerScreenHeight() {
+        return ControllerScreenHeight;
+    }
+
+    public static void setControllerScreenHeight(int getControllerScreenHeight) {
+        Configure.ControllerScreenHeight = getControllerScreenHeight;
+    }
+
+    public static boolean getInitScreen() {
+        return initScreen;
+    }
+
+    public static int getPuppetScreenWidth() {
+        return puppetScreenWidth;
+    }
+
+    public static int getPuppetScreenHeight() {
+        return getPuppetScreenHeight;
+    }
+
+    public static void setPuppetScreenWidth(int puppetScreenWidth) {
+        initScreen = true;
+        Configure.puppetScreenWidth = puppetScreenWidth;
+    }
+
+    public static void setPuppetScreenHeight(int getPuppetScreenHeight) {
+        Configure.getPuppetScreenHeight = getPuppetScreenHeight;
+    }
 
     public static MainActivity getMainActivity() {
         return mainActivity;

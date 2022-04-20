@@ -12,6 +12,7 @@ public class Configure {
     private static final String configFileName = "puppet.properties";
     public static final Properties properties = new Properties();
     private static int sessionId = 0;
+    private static final int bufferLength = 1024*1024*10;
 
     static {
         try {
@@ -35,6 +36,10 @@ public class Configure {
 
     public static String getHost() {
         return properties.getProperty("Host");
+    }
+
+    public static int getBufferLength() {
+        return bufferLength;
     }
 
     public static String getMacAddress() {

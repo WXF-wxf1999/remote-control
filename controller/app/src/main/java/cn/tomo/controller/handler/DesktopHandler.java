@@ -17,11 +17,20 @@ public class DesktopHandler extends AbstractHandler {
     @Override
     public void handleIo(DataPacketProto.Packet packet, ChannelHandlerContext ctx) {
 
+        // send command again
         DataPacketProto.Packet p = PacketBuilder.buildPacket(Command.DESKTOP_CONTROL, null, null);
-        // send command
         NettyClient.getChannelHandlerContext().channel().writeAndFlush(p);
-        //byte[] screenData = Zip.Decompress(packet.getDataSegment1().toByteArray());
+
         byte[] screenData = packet.getDataSegment1().toByteArray();
-        Configure.getMainActivity().imageShow(screenData);
+
+        Bitmap bitmap = BitmapFactory.decodeByteArray(screenData,0, screenData.length);
+
+        Configure.getMainActivity().imageShow(bitmap);
+
+        // initialize the configure
+        if(!Configure.getInitScreen()) {
+            Configure.setPuppetScreenHeight(bitmap.getHeight());
+            Configure.setPuppetScreenWidth(bitmap.getWidth());
+        }
     }
 }
