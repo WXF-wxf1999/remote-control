@@ -6,27 +6,43 @@ import androidx.core.app.ActivityCompat;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.ComponentInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.DisplayMetrics;
+import android.os.SystemClock;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.PopupMenu;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import cn.tomo.controller.R;
 import cn.tomo.controller.common.Command;
@@ -35,59 +51,143 @@ import cn.tomo.controller.netty.NettyClient;
 import cn.tomo.controller.proto.DataPacketProto;
 import cn.tomo.controller.proto.PacketBuilder;
 import cn.tomo.controller.robot.CursorRobot;
+import cn.tomo.controller.robot.FileRobot;
+import cn.tomo.controller.robot.KeyboardRobot;
 import cn.tomo.controller.robot.ScreenRobot;
-import kotlin.jvm.Synchronized;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final NettyClient nettyClient = new NettyClient();
     private static AlertDialog dialog = null;
     private ImageView imageView = null;
+    private Spinner spinner = null;
+    private EditText editText = null;
+    private ListView listView = null;
     private Handler handler = null;
-
+//    private ExpandableListView fileView = null;
+//    private ExpandableListViewAdapter adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         // hide status bar
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        imageView = findViewById(R.id.image_view);
-//        // set touch listen event
-//        imageView.setEnabled(true);
-//        imageView.setOnTouchListener(new CursorRobot());
-        // initialize the configure object
+        initView();
         Configure.setMainActivity(this);
         Configure.initConfig(getResources().openRawResource(R.raw.controller));
 
         verifyStoragePermissions(this);
 
-        initMenuButton();
-
         handler = new Handler(new Handler.Callback() {
 
             @Override
             public boolean handleMessage(Message msg) {
+
+                Bundle bundle = msg.getData();
+                String content = bundle.getString("controller");
                 switch (msg.what) {
                     case 0:
-                    imageView.setImageBitmap((Bitmap) msg.obj);
+                        innerUpdateSpinner(content);
+                        break;
+                    case 1:
+                        innerInsertFileItem(content);
+                        break;
+                    case 2:
+                        showMessage(content);
+                        break;
                 }
                 return false;
             }
 
         });
+
     }
 
+    private void initView() {
+
+        initMenuButton();
+        imageView = findViewById(R.id.image_view);
+        spinner = findViewById(R.id.spinner_view);
+        editText = findViewById(R.id.keyboard_view);
+        listView = findViewById(R.id.list_view);
+        spinner.setVisibility(View.GONE);
+
+    }
+
+    private void showMessage(String message) {
+
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+    private void innerUpdateSpinner(String contents) {
+
+        String[] gradeArray = contents.split("6666666");
+        ArrayAdapter<String> gradeAdapter=new ArrayAdapter<>(MainActivity.this,R.layout.support_simple_spinner_dropdown_item,gradeArray);
+        // set style
+        gradeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(gradeAdapter);
+        spinner.setVisibility(View.VISIBLE);
+    }
+
+    public Handler getHandler() {
+        return handler;
+    }
+    public void updateSpinner(String contents) {
+
+        // must send message to ui thread, or some crashes occur
+        Bundle data = new Bundle();
+        data.putString("controller", contents);
+        Message message = Message.obtain();
+        message.what = 0;
+        message.setData(data);
+        this.handler.sendMessage(message);
+
+    }
+
+    private void innerInsertFileItem(String files) {
+
+        String[] file = files.split("6666666");
+        listView.setAdapter(null);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1,file);
+        listView.setAdapter(adapter);
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
+                String filePath = ((TextView)view).getText().toString();
+                FileRobot.setFileName(filePath);
+                FileRobot.requestFileData(filePath);
+                return false;
+            }
+        });
+        listView.setVisibility(View.VISIBLE);
+    }
+
+    public void insertFileItem(String files) {
+
+        Bundle data = new Bundle();
+        data.putString("controller", files);
+        Message message = Message.obtain();
+        message.what = 1;
+        message.setData(data);
+        this.handler.sendMessage(message);
+    }
+
+    public Spinner getSpinner() {
+        return spinner;
+    }
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
 
-    private static String[] PERMISSIONS_STORAGE = {
+    private static final String[] PERMISSIONS_STORAGE = {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE" };
 
     // require privilege
     public void verifyStoragePermissions(Activity activity) {
+
+
         try {
             // check write privilege
             int permission = ActivityCompat.checkSelfPermission(activity,
@@ -126,10 +226,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.control:
                         // start control
+                        FileRobot.setFileMode(false);
+                        listView.setVisibility(View.GONE);
                         startControl();
                         break;
                     case R.id.file:
-                        Toast.makeText(MainActivity.this,"file",Toast.LENGTH_LONG).show();
+
+                        startFile();
                         break;
                     default:
                         break;
@@ -141,6 +244,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         popupMenu.show();
 
+    }
+
+    private void startFile() {
+
+        if(Configure.getSessionId() == 0) {
+
+            Toast.makeText(MainActivity.this, "please login first!", Toast.LENGTH_LONG).show();
+            return;
+        }
+        FileRobot.setFileMode(true);
+        SystemClock.sleep(1000);
+        FileRobot.requestDirectory(".");
+        KeyboardRobot keyBoardRobot = new KeyboardRobot();
+        editText.addTextChangedListener(keyBoardRobot);
+        editText.setOnKeyListener(keyBoardRobot);
     }
 
     private void popLoginWindow() {
@@ -188,22 +306,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         ScreenRobot.requestScreen();
 
-        // set touch listen event
+        // set touch listen event for cursor
         imageView.setEnabled(true);
         imageView.setOnTouchListener(new CursorRobot());
 
+        // to simulate the keyboard
+        KeyboardRobot keyBoardRobot = new KeyboardRobot();
+
+        editText.addTextChangedListener(keyBoardRobot);
+        editText.setOnKeyListener(keyBoardRobot);
     }
 
     public void imageShow(Bitmap srcBitmap) {
-
+        //Log.i("getScreen","fsfsf   " + srcBitmap.getByteCount());
         synchronized(this) {
             Bitmap bitmap = Bitmap.createScaledBitmap(srcBitmap, imageView.getWidth(), imageView.getHeight(), true);
         try{
             imageView.setImageBitmap(bitmap);
             imageView.postInvalidate();
         }finally {
-            Log.i("perperperperperpr","fsfsf"+ bitmap.getByteCount());
+            //Log.i("getScreen","fsfsf");
         }
+
         }
     }
 
@@ -211,6 +335,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initMenuButton() {
 
         ImageButton menuButton = findViewById(R.id.top_menu_button);
+        menuButton.bringToFront();
         menuButton.setBackgroundColor(Color.TRANSPARENT);
         menuButton.getBackground().setAlpha(200);
 

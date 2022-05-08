@@ -14,18 +14,22 @@ public class LoginHandler extends AbstractHandler {
 
         int messageType = packet.getMessageType();
 
+        String message = null;
         // close login window and store the ctx so that we can send message to puppet on our own initiative
         if(messageType == Command.CONTROLLER_LOGIN.ordinal()) {
 
             // set ChannelHandlerContext ,we can send message on our own initiative
             NettyClient.setChannelHandlerContext(ctx);
             MainActivity.shutDownLoginWindow();
+            message = "login successfully!";
         }
-//        else if(messageType == Command.DEVICE_NOT_ONLINE.ordinal()) {
-//            message = "device is not online!";
-//        }
-//        else {
-//            message = "some unknown error occurs! ";
-//        }
+        else if(messageType == Command.DEVICE_NOT_ONLINE.ordinal()) {
+            message = "device is not online!";
+        }
+        else {
+            message = "some unknown error occurs! ";
+        }
+
+        Configure.showInformation(message);
     }
 }

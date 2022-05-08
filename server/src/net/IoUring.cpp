@@ -31,7 +31,7 @@ void IoUring::post_accept(int socket, io_uring* ring) {
 
 void IoUring::post_recv(int socket, io_uring* ring) {
 
-    LOG_F(INFO, "POST RECV");
+    //LOG_F(INFO, "POST RECV");
     io_uring_sqe *sqe = io_uring_get_sqe(ring);
     // in read request, we can only specify the size of buffer in advance
     // in the case of the large amount data, it is a problem
@@ -53,7 +53,7 @@ void IoUring::post_recv(int socket, io_uring* ring) {
 
 void IoUring::post_send(Request* req, io_uring* ring) {
 
-    LOG_F(INFO, "SEND");
+    //LOG_F(INFO, "SEND");
     io_uring_sqe *sqe = io_uring_get_sqe(ring);
     if(sqe == nullptr) {
         LOG_F(ERROR, "io_uring_get_sqe() failed");
@@ -79,7 +79,7 @@ void IoUring::start_working() {
 
     thread_pool_ = new ThreadPoolSpace::ThreadPool(thread_number);
 
-    for(int i =0; i<thread_number; i++) {
+    for(int i = 0; i < thread_number; i++) {
         thread_pool_->submit([this] { wait_request(this);});
     }
 
@@ -165,7 +165,7 @@ void* IoUring::wait_request(void* parameter) {
         int ret = io_uring_wait_cqe(&ring, &cqe);
 
         if (ret < 0) {
-            LOG_F(INFO, "io_uring_wait_cqe %d", ret);
+            //LOG_F(INFO, "io_uring_wait_cqe %d", ret);
             continue;
         }
 
@@ -174,7 +174,7 @@ void* IoUring::wait_request(void* parameter) {
         auto *req = reinterpret_cast<Request*>(cqe->user_data);
 
         if (res < 0) {
-            LOG_F(ERROR, "Async request failed: %s for event: %d\n", strerror(res), req->event_type);
+            //LOG_F(ERROR, "Async request failed: %s for event: %d\n", strerror(res), req->event_type);
             //continue;
             return nullptr;
         }
@@ -182,7 +182,7 @@ void* IoUring::wait_request(void* parameter) {
         // mark that we have tackled this io event
         io_uring_cqe_seen(&ring, cqe);
 
-        LOG_F(INFO, "handle io");
+        //LOG_F(INFO, "handle io");
         // handle io
         pthis->handle_io(res, req, &ring);
     }
@@ -218,15 +218,15 @@ void IoUring::handle_io(int res, IoUring::Request* req, io_uring* ring) {
             // An asynchronous accept request has been consumed, so add a new one
             post_accept(get_listen_socket(), ring);
             post_recv(res, ring);
-            LOG_F(INFO, "ACCEPT");
+            //LOG_F(INFO, "ACCEPT");
             delete req;
             break;
         case IoType::OP_READ:
             if (!res) {
-                LOG_F(INFO, "Empty request!");
+                //LOG_F(INFO, "Empty request!");
                 break;
             }
-            LOG_F(INFO, "READ");
+            //LOG_F(INFO, "READ");
             // this step doesn't need delete req,because we use it repeatedly
             handle_request(req, ring);
             break;
@@ -249,7 +249,7 @@ void IoUring::handle_request(IoUring::Request *request, io_uring* ring) {
     Packet packet;
     if(CoderSpace::Coder::decode(request, packet) == -1) {
 
-        LOG_F(INFO, "receive a malformed packet");
+        //LOG_F(INFO, "receive a malformed packet");
         return;
     }
 
@@ -307,7 +307,7 @@ void IoUring::controller_login(IoUring::Request *request, Packet &packet) {
 
 }
 
-static const uint32_t g_buffer_size = 1024*1024*3;
+static const uint32_t g_buffer_size = 1024*1024*5;
 static __thread char* g_buffer = nullptr;
 
 void IoUring::forward_data(IoUring::Request *request, Packet &packet,io_uring* ring) {
@@ -336,10 +336,17 @@ void IoUring::forward_data(IoUring::Request *request, Packet &packet,io_uring* r
     // relay message to puppet
     long return_len = 0;
     send(client_socket, request->iov[0].iov_base, send_len, 0);
-    // receive the message from puppet
-    return_len = receive(client_socket, g_buffer, g_buffer_size);
-    // return the result to controller
-    send(request->client_socket, g_buffer, return_len, 0);
+
+    uint32_t type = packet.messagetype();
+    // for example send cursor, it will not execute the following code
+    if(type == ObjectSpace::MessageType::DESKTOP_CONTROL ||
+      (type <= ObjectSpace::MessageType::FILE_REQUEST && type >= ObjectSpace::MessageType::DRIVER_REQUEST) ) {
+        // receive the message from puppet
+        return_len = receive(client_socket, g_buffer, g_buffer_size);
+        // return the result to controller
+        send(request->client_socket, g_buffer, return_len, 0);
+        LOG_F(INFO, "screen");
+    }
 
     delete static_cast<char*>(request->iov[0].iov_base);
     delete request;

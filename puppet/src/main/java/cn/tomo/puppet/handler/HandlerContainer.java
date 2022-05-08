@@ -19,7 +19,10 @@ public class HandlerContainer {
         handlerNames.put(Command.CURSOR_CONTROL_LEFT_DOWN, CursorHandler.class);
         handlerNames.put(Command.CURSOR_CONTROL_RIGHT_DOWN, CursorHandler.class);
         handlerNames.put(Command.CURSOR_CONTROL_WHEEL, CursorHandler.class);
-
+        handlerNames.put(Command.KEYBOARD_CONTROL, KeyboardHandler.class);
+        handlerNames.put(Command.DRIVER_REQUEST, FileHandler.class);
+        handlerNames.put(Command.FILE_RESEARCH, FileHandler.class);
+        handlerNames.put(Command.FILE_REQUEST, FileHandler.class);
     }
 
     public static AbstractHandler getHandler(Command command) {

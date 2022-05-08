@@ -1,6 +1,8 @@
 package cn.tomo.controller.common;
 
 import android.content.Context;
+import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
@@ -81,6 +83,15 @@ public class Configure {
             Log.i(Configure.class.getName(),e.getMessage());
         }
 
+    }
+
+    public static void showInformation(String info) {
+        Bundle bundle = new Bundle();
+        bundle.putString("controller", info);
+        Message message = Message.obtain();
+        message.what = 2;
+        message.setData(bundle);
+        Configure.getMainActivity().getHandler().sendMessage(message);
     }
 
     public static void setSessionId(int sessionId) {

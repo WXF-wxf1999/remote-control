@@ -32,7 +32,7 @@ public class ScreenRobot {
 //
 //        timer = new Timer();
 //
-//        long intervalPeriod = 400;
+//        long intervalPeriod = 200;
 //
 //        // schedules the task to be run in an interval
 //        timer.scheduleAtFixedRate(task, 0, intervalPeriod);

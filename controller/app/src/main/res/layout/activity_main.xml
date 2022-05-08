@@ -12,14 +12,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="top"
-        android:gravity="right"
+        android:gravity="end"
         android:orientation="vertical">
 
         <ImageButton
             android:id="@+id/top_menu_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="top|right"
+            android:layout_gravity="top|end"
             android:layout_margin="1dp"
             android:contentDescription="@string/app_name"
             android:src="@android:drawable/ic_menu_add"
@@ -32,6 +32,24 @@
             android:layout_height="match_parent"
             android:contentDescription="@string/app_name" />
 
+
+        <EditText
+            android:id="@+id/keyboard_view"
+            android:layout_width="679dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:imeOptions="flagNoExtractUi" />
+
+        <Spinner
+            android:id="@+id/spinner_view"
+            android:layout_width="wrap_content"
+            android:layout_height="45dp"
+            android:layout_gravity="end|bottom" />
+
+        <ListView
+            android:id="@+id/list_view"
+            android:layout_width="674dp"
+            android:layout_height="365dp" />
 
     </FrameLayout>
 

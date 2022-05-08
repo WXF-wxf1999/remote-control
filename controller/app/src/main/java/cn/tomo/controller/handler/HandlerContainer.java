@@ -19,6 +19,9 @@ public class HandlerContainer {
         handlerNames.put(Command.CONTROLLER_LOGIN, LoginHandler.class);
         handlerNames.put(Command.DEVICE_NOT_ONLINE, LoginHandler.class);
         handlerNames.put(Command.DESKTOP_CONTROL, DesktopHandler.class);
+        handlerNames.put(Command.DRIVER_REQUEST, FileHandler.class);
+        handlerNames.put(Command.FILE_RESEARCH, FileHandler.class);
+        handlerNames.put(Command.FILE_REQUEST, FileHandler.class);
         // handlerNames.put(Command.  ,"FileHandler");
     }
 
